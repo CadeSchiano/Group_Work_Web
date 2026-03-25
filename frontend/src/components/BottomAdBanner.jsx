@@ -2,28 +2,12 @@ import { useEffect } from "react";
 
 const ADSENSE_CLIENT = import.meta.env.VITE_GOOGLE_ADS_CLIENT;
 const ADSENSE_SLOT = import.meta.env.VITE_GOOGLE_ADS_SLOT;
-const ADSENSE_SCRIPT_ID = "google-adsense-script";
-
-const loadAdSenseScript = () => {
-  if (!ADSENSE_CLIENT || document.getElementById(ADSENSE_SCRIPT_ID)) {
-    return;
-  }
-
-  const script = document.createElement("script");
-  script.id = ADSENSE_SCRIPT_ID;
-  script.async = true;
-  script.crossOrigin = "anonymous";
-  script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`;
-  document.head.appendChild(script);
-};
 
 export default function BottomAdBanner() {
   useEffect(() => {
     if (!ADSENSE_CLIENT || !ADSENSE_SLOT) {
       return;
     }
-
-    loadAdSenseScript();
 
     const timer = window.setTimeout(() => {
       try {

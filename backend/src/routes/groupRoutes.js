@@ -23,8 +23,10 @@ router.post("/:groupId/tasks", asyncHandler(createTask));
 router.get("/:groupId/files", asyncHandler(listFiles));
 router.post("/:groupId/files", upload.single("file"), asyncHandler(uploadFile));
 router.delete("/:groupId/files/:fileId", asyncHandler(deleteFile));
+router.post("/:groupId/files/:fileId/delete", asyncHandler(deleteFile));
 router.get("/:groupId/roadmap", asyncHandler(listRoadmapItems));
 router.post("/:groupId/roadmap", asyncHandler(createRoadmapItem));
 router.delete("/:groupId/members/:memberId", asyncHandler(removeGroupMember));
+router.post("/:groupId/members/:memberId/remove", asyncHandler(removeGroupMember));
 
 export default router;

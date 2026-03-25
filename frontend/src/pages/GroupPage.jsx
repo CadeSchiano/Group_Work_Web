@@ -152,8 +152,8 @@ export default function GroupPage() {
     setError("");
 
     try {
-      await apiRequest(`/groups/${groupId}/members/${memberId}`, {
-        method: "DELETE",
+      await apiRequest(`/groups/${groupId}/members/${memberId}/remove`, {
+        method: "POST",
         token,
       });
       await loadGroup();
@@ -166,8 +166,8 @@ export default function GroupPage() {
     setError("");
 
     try {
-      await apiRequest(`/groups/${groupId}/files/${fileId}`, {
-        method: "DELETE",
+      await apiRequest(`/groups/${groupId}/files/${fileId}/delete`, {
+        method: "POST",
         token,
       });
       await loadGroup();

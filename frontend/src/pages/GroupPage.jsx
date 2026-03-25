@@ -206,7 +206,7 @@ export default function GroupPage() {
     <AppShell>
       <div className="flex items-center justify-between">
         <div>
-          <Link className="text-sm text-mint" to="/">
+          <Link className="text-sm text-mint" to="/app">
             Back to dashboard
           </Link>
           <h1 className="mt-3 font-display text-5xl">{group?.name || "Loading group..."}</h1>

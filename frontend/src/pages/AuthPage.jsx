@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useState } from "react";
 import { apiRequest } from "../api/client";
 import Button from "../components/Button";
@@ -166,6 +167,14 @@ export default function AuthPage() {
             )}
           </form>
         </Card>
+      </div>
+      <div className="mx-auto mt-8 flex max-w-6xl justify-between text-sm text-mist/65">
+        <Link className="transition hover:text-white" to="/">
+          Public home
+        </Link>
+        <Link className="transition hover:text-white" to="/privacy">
+          Privacy Policy
+        </Link>
       </div>
     </div>
   );

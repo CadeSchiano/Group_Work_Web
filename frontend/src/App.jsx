@@ -2,6 +2,8 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import AuthPage from "./pages/AuthPage";
 import DashboardPage from "./pages/DashboardPage";
 import GroupPage from "./pages/GroupPage";
+import HomePage from "./pages/HomePage";
+import PrivacyPage from "./pages/PrivacyPage";
 import { useAuth } from "./hooks/useAuth";
 
 const ProtectedRoute = ({ children }) => {
@@ -23,9 +25,11 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
+      <Route path="/" element={<HomePage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/auth" element={user ? <Navigate to="/app" replace /> : <AuthPage />} />
       <Route
-        path="/"
+        path="/app"
         element={
           <ProtectedRoute>
             <DashboardPage />
@@ -40,6 +44,7 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+      <Route path="*" element={<Navigate to={user ? "/app" : "/"} replace />} />
     </Routes>
   );
 }

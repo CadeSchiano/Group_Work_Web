@@ -190,6 +190,13 @@ Required frontend environment variable on Vercel:
 VITE_API_URL="https://group-work-web.onrender.com/api"
 ```
 
+Optional ad environment variables:
+
+```env
+VITE_GOOGLE_ADS_CLIENT="ca-pub-XXXXXXXXXXXXXXXX"
+VITE_GOOGLE_ADS_SLOT="1234567890"
+```
+
 `frontend/vercel.json` is included so client-side routes like `/auth` and `/groups/:groupId` resolve correctly.
 
 ## API Summary

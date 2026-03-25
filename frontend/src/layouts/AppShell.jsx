@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import Button from "../components/Button";
+import BottomAdBanner from "../components/BottomAdBanner";
 import { useAuth } from "../hooks/useAuth";
 
 export default function AppShell({ children }) {
@@ -23,7 +24,8 @@ export default function AppShell({ children }) {
           </div>
         </div>
       </header>
-      <main className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-10">{children}</main>
+      <main className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-10 pb-40">{children}</main>
+      <BottomAdBanner />
     </div>
   );
 }

@@ -46,7 +46,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="font-display text-2xl text-white">Contact</h2>
             <p className="mt-2">
-              If you have questions about this policy or the handling of your data, provide a contact email address on your production site so visitors and reviewers can reach you.
+              If you have questions about this policy or the handling of your data, contact cadeschiano8@yahoo.com.
             </p>
           </section>
         </div>

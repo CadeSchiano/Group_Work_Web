@@ -11,18 +11,51 @@ export default function AuthPage() {
   const [mode, setMode] = useState("login");
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { persistSession } = useAuth();
+
+  const isRecoveryMode = mode === "recover";
+
+  const resetFormState = (nextMode) => {
+    setMode(nextMode);
+    setForm(initialForm);
+    setError("");
+    setMessage("");
+    setShowPassword(false);
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
+    setMessage("");
     setLoading(true);
 
     try {
-      const path = mode === "login" ? "/auth/login" : "/auth/signup";
-      const payload = mode === "login" ? form : form;
+      const path =
+        mode === "login"
+          ? "/auth/login"
+          : mode === "signup"
+            ? "/auth/signup"
+            : "/auth/recover-password";
+      const payload =
+        mode === "signup"
+          ? form
+          : {
+              email: form.email,
+              password: form.password,
+            };
       const data = await apiRequest(path, { method: "POST", body: payload });
+
+      if (isRecoveryMode) {
+        setMessage(data.message);
+        setForm(initialForm);
+        setShowPassword(false);
+        setMode("login");
+        return;
+      }
+
       persistSession(data.token, data.user);
     } catch (submitError) {
       setError(submitError.message);
@@ -60,14 +93,14 @@ export default function AuthPage() {
           <div className="mb-8 flex rounded-2xl bg-white/5 p-1">
             <button
               className={`flex-1 rounded-2xl px-4 py-3 ${mode === "login" ? "bg-white text-ink" : "text-mist/80"}`}
-              onClick={() => setMode("login")}
+              onClick={() => resetFormState("login")}
               type="button"
             >
               Log in
             </button>
             <button
               className={`flex-1 rounded-2xl px-4 py-3 ${mode === "signup" ? "bg-white text-ink" : "text-mist/80"}`}
-              onClick={() => setMode("signup")}
+              onClick={() => resetFormState("signup")}
               type="button"
             >
               Sign up
@@ -91,18 +124,46 @@ export default function AuthPage() {
               onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
             />
             <Input
-              label="Password"
-              type="password"
-              placeholder="••••••••"
+              label={isRecoveryMode ? "New password" : "Password"}
+              type={showPassword ? "text" : "password"}
+              placeholder={isRecoveryMode ? "Choose a new password" : "••••••••"}
               value={form.password}
               onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
+              rightElement={
+                <button
+                  className="text-sm font-semibold text-mint transition hover:text-white"
+                  onClick={() => setShowPassword((current) => !current)}
+                  type="button"
+                >
+                  {showPassword ? "Hide" : "Show"}
+                </button>
+              }
             />
 
+            {message ? <p className="rounded-2xl bg-mint/10 px-4 py-3 text-sm text-mint">{message}</p> : null}
             {error ? <p className="rounded-2xl bg-coral/10 px-4 py-3 text-sm text-coral">{error}</p> : null}
 
             <Button className="w-full" disabled={loading} type="submit">
-              {loading ? "Working..." : mode === "login" ? "Log in" : "Create account"}
+              {loading ? "Working..." : mode === "login" ? "Log in" : mode === "signup" ? "Create account" : "Reset password"}
             </Button>
+
+            {isRecoveryMode ? (
+              <button
+                className="w-full text-sm text-mist/80 transition hover:text-white"
+                onClick={() => resetFormState("login")}
+                type="button"
+              >
+                Back to log in
+              </button>
+            ) : (
+              <button
+                className="w-full text-sm text-mint transition hover:text-white"
+                onClick={() => resetFormState("recover")}
+                type="button"
+              >
+                Forgot password?
+              </button>
+            )}
           </form>
         </Card>
       </div>

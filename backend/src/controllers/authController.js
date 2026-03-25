@@ -45,4 +45,26 @@ export const login = async (req, res) => {
   return res.json({ token, user: serializeUser(user) });
 };
 
+export const recoverPassword = async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ message: "Email and a new password are required." });
+  }
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    return res.status(404).json({ message: "No account matches that email." });
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+
+  await prisma.user.update({
+    where: { email },
+    data: { passwordHash },
+  });
+
+  return res.json({ message: "Password updated. You can log in with the new password now." });
+};
+
 export const me = async (req, res) => res.json({ user: req.user });

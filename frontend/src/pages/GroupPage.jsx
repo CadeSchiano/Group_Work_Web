@@ -14,6 +14,20 @@ import AppShell from "../layouts/AppShell";
 const emptyTask = { title: "", description: "", assignedUserId: "", dueDate: "", status: "TODO" };
 const emptyMilestone = { title: "", description: "", targetDate: "" };
 
+const tryRemoveRequest = async (requests) => {
+  let lastError = null;
+
+  for (const request of requests) {
+    try {
+      return await apiRequest(request.path, request.options);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError;
+};
+
 export default function GroupPage() {
   const { groupId } = useParams();
   const { token, user } = useAuth();
@@ -152,10 +166,16 @@ export default function GroupPage() {
     setError("");
 
     try {
-      await apiRequest(`/groups/${groupId}/members/${memberId}/remove`, {
-        method: "POST",
-        token,
-      });
+      await tryRemoveRequest([
+        {
+          path: `/groups/${groupId}/members/${memberId}/remove`,
+          options: { method: "POST", token, body: {} },
+        },
+        {
+          path: `/groups/${groupId}/members/${memberId}`,
+          options: { method: "DELETE", token },
+        },
+      ]);
       await loadGroup();
     } catch (submitError) {
       setError(submitError.message);
@@ -166,10 +186,16 @@ export default function GroupPage() {
     setError("");
 
     try {
-      await apiRequest(`/groups/${groupId}/files/${fileId}/delete`, {
-        method: "POST",
-        token,
-      });
+      await tryRemoveRequest([
+        {
+          path: `/groups/${groupId}/files/${fileId}/delete`,
+          options: { method: "POST", token, body: {} },
+        },
+        {
+          path: `/groups/${groupId}/files/${fileId}`,
+          options: { method: "DELETE", token },
+        },
+      ]);
       await loadGroup();
     } catch (submitError) {
       setError(submitError.message);

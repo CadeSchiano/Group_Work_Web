@@ -62,16 +62,14 @@ export default function BottomAdBanner() {
 
   return (
     <aside className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-ink/95 backdrop-blur">
-      <div className="mx-auto flex max-w-4xl flex-col gap-1 px-4 py-2">
+      <div className="mx-auto flex max-w-[820px] flex-col gap-1 px-4 py-2">
         <p className="text-[10px] uppercase tracking-[0.3em] text-mist/50">Sponsored</p>
-        <div className="overflow-hidden rounded-xl border border-white/10 bg-white px-2 py-1">
+        <div className="mx-auto w-full max-w-[728px] overflow-hidden rounded-xl border border-white/10 bg-white px-2 py-1">
           <ins
             className="adsbygoogle block"
             data-ad-client={ADSENSE_CLIENT}
-            data-ad-format="auto"
             data-ad-slot={ADSENSE_SLOT}
-            data-full-width-responsive="true"
-            style={{ display: "block", minHeight: "56px", maxHeight: "72px" }}
+            style={{ display: "inline-block", width: "728px", height: "90px", maxWidth: "100%" }}
           />
         </div>
       </div>

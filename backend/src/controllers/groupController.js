@@ -127,3 +127,62 @@ export const getGroupDetails = async (req, res) => {
 
   return res.json({ group: mapGroup(group) });
 };
+
+export const removeGroupMember = async (req, res) => {
+  const { groupId, memberId } = req.params;
+
+  const currentMembership = await prisma.groupMember.findUnique({
+    where: {
+      groupId_userId: {
+        groupId,
+        userId: req.user.id,
+      },
+    },
+  });
+
+  if (!currentMembership) {
+    return res.status(403).json({ message: "You do not have access to this group." });
+  }
+
+  if (currentMembership.role !== "owner") {
+    return res.status(403).json({ message: "Only the group owner can remove members." });
+  }
+
+  const membershipToRemove = await prisma.groupMember.findUnique({
+    where: {
+      groupId_userId: {
+        groupId,
+        userId: memberId,
+      },
+    },
+  });
+
+  if (!membershipToRemove) {
+    return res.status(404).json({ message: "Member not found in this group." });
+  }
+
+  if (membershipToRemove.role === "owner" || membershipToRemove.userId === req.user.id) {
+    return res.status(400).json({ message: "The group owner cannot be removed." });
+  }
+
+  await prisma.groupMember.delete({
+    where: {
+      groupId_userId: {
+        groupId,
+        userId: memberId,
+      },
+    },
+  });
+
+  await prisma.task.updateMany({
+    where: {
+      groupId,
+      assignedUserId: memberId,
+    },
+    data: {
+      assignedUserId: null,
+    },
+  });
+
+  return res.json({ message: "Member removed from the group." });
+};

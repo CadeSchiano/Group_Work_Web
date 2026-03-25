@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { apiRequest } from "../api/client";
 import Button from "../components/Button";
@@ -16,13 +16,24 @@ const emptyMilestone = { title: "", description: "", targetDate: "" };
 
 export default function GroupPage() {
   const { groupId } = useParams();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [group, setGroup] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [taskForm, setTaskForm] = useState(emptyTask);
   const [milestoneForm, setMilestoneForm] = useState(emptyMilestone);
   const [file, setFile] = useState(null);
+
+  const progressValue = useMemo(() => {
+    if (!group?.tasks?.length) {
+      return 0;
+    }
+
+    const completedTasks = group.tasks.filter((task) => task.status === "DONE").length;
+    return Math.round((completedTasks / group.tasks.length) * 100);
+  }, [group]);
+
+  const isOwner = group?.ownerId === user?.id;
 
   const loadGroup = async () => {
     setLoading(true);
@@ -68,6 +79,14 @@ export default function GroupPage() {
 
     try {
       const task = group.tasks.find((item) => item.id === taskId);
+      setGroup((current) =>
+        current
+          ? {
+              ...current,
+              tasks: current.tasks.map((item) => (item.id === taskId ? { ...item, status } : item)),
+            }
+          : current,
+      );
       await apiRequest(`/tasks/${taskId}`, {
         method: "PATCH",
         token,
@@ -82,6 +101,7 @@ export default function GroupPage() {
       await loadGroup();
     } catch (submitError) {
       setError(submitError.message);
+      await loadGroup();
     }
   };
 
@@ -128,6 +148,34 @@ export default function GroupPage() {
     }
   };
 
+  const handleRemoveMember = async (memberId) => {
+    setError("");
+
+    try {
+      await apiRequest(`/groups/${groupId}/members/${memberId}`, {
+        method: "DELETE",
+        token,
+      });
+      await loadGroup();
+    } catch (submitError) {
+      setError(submitError.message);
+    }
+  };
+
+  const handleRemoveFile = async (fileId) => {
+    setError("");
+
+    try {
+      await apiRequest(`/groups/${groupId}/files/${fileId}`, {
+        method: "DELETE",
+        token,
+      });
+      await loadGroup();
+    } catch (submitError) {
+      setError(submitError.message);
+    }
+  };
+
   return (
     <AppShell>
       <div className="flex items-center justify-between">
@@ -143,7 +191,7 @@ export default function GroupPage() {
             <p className="text-sm text-mist/70">Invite code</p>
             <p className="mt-2 font-display text-4xl">{group.inviteCode}</p>
             <div className="mt-4">
-              <ProgressBar value={group.progress} />
+              <ProgressBar value={progressValue} />
             </div>
           </Card>
         ) : null}
@@ -273,18 +321,32 @@ export default function GroupPage() {
                 </form>
                 <div className="mt-6 space-y-3">
                   {group.files.map((item) => (
-                    <a
-                      className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-mist transition hover:border-mint/40"
-                      href={`${import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:4000"}${item.filePath}`}
+                    <div
+                      className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-mist transition hover:border-mint/40"
                       key={item.id}
-                      rel="noreferrer"
-                      target="_blank"
                     >
-                      <span>{item.originalName}</span>
-                      <span>
-                        {item.uploader.name} • {new Date(item.createdAt).toLocaleDateString()}
-                      </span>
-                    </a>
+                      <a
+                        className="min-w-0 flex-1"
+                        href={`${import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:4000"}${item.filePath}`}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        <p className="truncate">{item.originalName}</p>
+                        <p className="mt-1 text-xs text-mist/70">
+                          {item.uploader.name} • {new Date(item.createdAt).toLocaleDateString()}
+                        </p>
+                      </a>
+                      {isOwner || item.uploader.id === user?.id ? (
+                        <Button
+                          className="px-3 py-2 text-xs"
+                          onClick={() => handleRemoveFile(item.id)}
+                          type="button"
+                          variant="ghost"
+                        >
+                          Remove
+                        </Button>
+                      ) : null}
+                    </div>
                   ))}
                 </div>
               </Card>
@@ -350,9 +412,21 @@ export default function GroupPage() {
                         <p className="font-semibold">{member.user.name}</p>
                         <p className="text-sm text-mist/70">{member.user.email}</p>
                       </div>
-                      <span className="rounded-full bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.2em] text-mist">
-                        {member.role}
-                      </span>
+                      <div className="flex items-center gap-3">
+                        <span className="rounded-full bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.2em] text-mist">
+                          {member.role}
+                        </span>
+                        {isOwner && member.user.id !== user?.id ? (
+                          <Button
+                            className="px-3 py-2 text-xs"
+                            onClick={() => handleRemoveMember(member.user.id)}
+                            type="button"
+                            variant="ghost"
+                          >
+                            Remove
+                          </Button>
+                        ) : null}
+                      </div>
                     </div>
                   ))}
                 </div>

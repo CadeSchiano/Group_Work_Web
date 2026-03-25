@@ -40,7 +40,7 @@ export default function BottomAdBanner() {
   if (!ADSENSE_CLIENT || !ADSENSE_SLOT) {
     return (
       <aside className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-ink/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-3">
+        <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-4 py-2">
           <div className="min-w-0">
             <p className="text-[10px] uppercase tracking-[0.3em] text-mist/50">Sponsored Slot</p>
             <p className="truncate text-sm text-mist/80">
@@ -62,16 +62,16 @@ export default function BottomAdBanner() {
 
   return (
     <aside className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-ink/95 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl flex-col gap-2 px-6 py-3">
+      <div className="mx-auto flex max-w-4xl flex-col gap-1 px-4 py-2">
         <p className="text-[10px] uppercase tracking-[0.3em] text-mist/50">Sponsored</p>
-        <div className="overflow-hidden rounded-2xl border border-white/10 bg-white px-2 py-2">
+        <div className="overflow-hidden rounded-xl border border-white/10 bg-white px-2 py-1">
           <ins
             className="adsbygoogle block"
             data-ad-client={ADSENSE_CLIENT}
             data-ad-format="auto"
             data-ad-slot={ADSENSE_SLOT}
             data-full-width-responsive="true"
-            style={{ display: "block", minHeight: "90px" }}
+            style={{ display: "block", minHeight: "56px", maxHeight: "72px" }}
           />
         </div>
       </div>

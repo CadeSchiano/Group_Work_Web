@@ -67,12 +67,14 @@ export const getAuthToken = (req) => {
 };
 
 export const setAuthCookie = (res, token) => {
+  const isProduction = process.env.NODE_ENV === "production";
+
   appendSetCookie(
     res,
     buildCookie(COOKIE_NAME, token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Lax",
+      secure: isProduction,
+      sameSite: isProduction ? "None" : "Lax",
       path: "/",
       maxAge: 60 * 60 * 24 * 7,
     }),
@@ -80,12 +82,14 @@ export const setAuthCookie = (res, token) => {
 };
 
 export const clearAuthCookie = (res) => {
+  const isProduction = process.env.NODE_ENV === "production";
+
   appendSetCookie(
     res,
     buildCookie(COOKIE_NAME, "", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Lax",
+      secure: isProduction,
+      sameSite: isProduction ? "None" : "Lax",
       path: "/",
       maxAge: 0,
     }),

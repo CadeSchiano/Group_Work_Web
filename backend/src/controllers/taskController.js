@@ -1,5 +1,7 @@
 import { prisma } from "../config/prisma.js";
 
+const validStatuses = new Set(["TODO", "IN_PROGRESS", "DONE"]);
+
 const ensureMembership = async (groupId, userId) =>
   prisma.groupMember.findUnique({
     where: {
@@ -9,6 +11,24 @@ const ensureMembership = async (groupId, userId) =>
       },
     },
   });
+
+const parseOptionalDate = (value) => {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const validateAssignee = async (groupId, assignedUserId) => {
+  if (!assignedUserId) {
+    return null;
+  }
+
+  const assigneeMembership = await ensureMembership(groupId, assignedUserId);
+  return assigneeMembership ? assignedUserId : false;
+};
 
 export const listTasks = async (req, res) => {
   const { groupId } = req.params;
@@ -30,11 +50,23 @@ export const listTasks = async (req, res) => {
 };
 
 export const createTask = async (req, res) => {
-  const { title, description, assignedUserId, dueDate, status } = req.body;
+  const title = req.body.title?.trim();
+  const description = req.body.description?.trim();
+  const assignedUserId = req.body.assignedUserId || null;
+  const dueDate = parseOptionalDate(req.body.dueDate);
+  const status = req.body.status || "TODO";
   const { groupId } = req.params;
 
   if (!title || !description) {
     return res.status(400).json({ message: "Title and description are required." });
+  }
+
+  if (!validStatuses.has(status)) {
+    return res.status(400).json({ message: "Task status is invalid." });
+  }
+
+  if (req.body.dueDate && !dueDate) {
+    return res.status(400).json({ message: "Due date is invalid." });
   }
 
   const membership = await ensureMembership(groupId, req.user.id);
@@ -42,13 +74,18 @@ export const createTask = async (req, res) => {
     return res.status(403).json({ message: "You do not have access to this group." });
   }
 
+  const validatedAssignee = await validateAssignee(groupId, assignedUserId);
+  if (validatedAssignee === false) {
+    return res.status(400).json({ message: "Assigned user must be a member of this group." });
+  }
+
   const task = await prisma.task.create({
     data: {
       title,
       description,
-      assignedUserId: assignedUserId || null,
-      dueDate: dueDate ? new Date(dueDate) : null,
-      status: status || "TODO",
+      assignedUserId: validatedAssignee,
+      dueDate,
+      status,
       groupId,
     },
     include: {
@@ -73,15 +110,36 @@ export const updateTask = async (req, res) => {
     return res.status(403).json({ message: "You do not have access to this task." });
   }
 
-  const { title, description, assignedUserId, dueDate, status } = req.body;
+  const title = req.body.title?.trim();
+  const description = req.body.description?.trim();
+  const assignedUserId = req.body.assignedUserId || null;
+  const dueDate = parseOptionalDate(req.body.dueDate);
+  const status = req.body.status;
+
+  if (!title || !description || !status) {
+    return res.status(400).json({ message: "Title, description, and status are required." });
+  }
+
+  if (!validStatuses.has(status)) {
+    return res.status(400).json({ message: "Task status is invalid." });
+  }
+
+  if (req.body.dueDate && !dueDate) {
+    return res.status(400).json({ message: "Due date is invalid." });
+  }
+
+  const validatedAssignee = await validateAssignee(existingTask.groupId, assignedUserId);
+  if (validatedAssignee === false) {
+    return res.status(400).json({ message: "Assigned user must be a member of this group." });
+  }
 
   const task = await prisma.task.update({
     where: { id: req.params.taskId },
     data: {
       title,
       description,
-      assignedUserId: assignedUserId || null,
-      dueDate: dueDate ? new Date(dueDate) : null,
+      assignedUserId: validatedAssignee,
+      dueDate,
       status,
     },
     include: {

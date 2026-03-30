@@ -14,16 +14,18 @@ enum TaskStatus {
 }
 
 model User {
-  id             String        @id @default(cuid())
-  name           String
-  email          String        @unique
-  passwordHash   String
-  ownedGroups    Group[]       @relation("GroupOwner")
-  memberships    GroupMember[]
-  assignedTasks  Task[]        @relation("TaskAssignee")
-  uploadedFiles  GroupFile[]
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id                     String        @id @default(cuid())
+  name                   String
+  email                  String        @unique
+  passwordHash           String
+  passwordResetTokenHash String?
+  passwordResetExpiresAt DateTime?
+  ownedGroups            Group[]       @relation("GroupOwner")
+  memberships            GroupMember[]
+  assignedTasks          Task[]        @relation("TaskAssignee")
+  uploadedFiles          GroupFile[]
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
 }
 
 model Group {
@@ -54,24 +56,23 @@ model GroupMember {
 }
 
 model Task {
-  id           String      @id @default(cuid())
-  title        String
-  description  String
-  dueDate      DateTime?
-  status       TaskStatus  @default(TODO)
-  groupId      String
+  id             String      @id @default(cuid())
+  title          String
+  description    String
+  dueDate        DateTime?
+  status         TaskStatus  @default(TODO)
+  groupId        String
   assignedUserId String?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  group        Group       @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  assignedUser User?       @relation("TaskAssignee", fields: [assignedUserId], references: [id], onDelete: SetNull)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  group          Group       @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  assignedUser   User?       @relation("TaskAssignee", fields: [assignedUserId], references: [id], onDelete: SetNull)
 }
 
 model GroupFile {
   id           String   @id @default(cuid())
   originalName String
   fileName     String
-  filePath     String
   mimeType     String
   size         Int
   groupId      String

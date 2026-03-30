@@ -1,6 +1,6 @@
 import { prisma } from "../config/prisma.js";
-import { calculateProgress } from "../utils/serializers.js";
 import { generateInviteCode } from "../utils/generateInviteCode.js";
+import { calculateProgress } from "../utils/serializers.js";
 
 const groupInclude = {
   owner: { select: { id: true, name: true, email: true } },
@@ -31,6 +31,19 @@ const mapGroup = (group) => ({
   progress: calculateProgress(group.tasks),
 });
 
+const createUniqueInviteCode = async () => {
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const inviteCode = generateInviteCode();
+    const existingGroup = await prisma.group.findUnique({ where: { inviteCode } });
+
+    if (!existingGroup) {
+      return inviteCode;
+    }
+  }
+
+  throw new Error("Unable to generate a unique invite code.");
+};
+
 export const listGroups = async (req, res) => {
   const memberships = await prisma.groupMember.findMany({
     where: { userId: req.user.id },
@@ -44,7 +57,8 @@ export const listGroups = async (req, res) => {
 };
 
 export const createGroup = async (req, res) => {
-  const { name, description } = req.body;
+  const name = req.body.name?.trim();
+  const description = req.body.description?.trim();
 
   if (!name || !description) {
     return res.status(400).json({ message: "Name and description are required." });
@@ -54,7 +68,7 @@ export const createGroup = async (req, res) => {
     data: {
       name,
       description,
-      inviteCode: generateInviteCode(),
+      inviteCode: await createUniqueInviteCode(),
       ownerId: req.user.id,
       members: {
         create: {
@@ -70,14 +84,14 @@ export const createGroup = async (req, res) => {
 };
 
 export const joinGroup = async (req, res) => {
-  const { inviteCode } = req.body;
+  const inviteCode = req.body.inviteCode?.trim().toUpperCase();
 
   if (!inviteCode) {
     return res.status(400).json({ message: "Invite code is required." });
   }
 
   const group = await prisma.group.findUnique({
-    where: { inviteCode: inviteCode.toUpperCase() },
+    where: { inviteCode },
   });
 
   if (!group) {

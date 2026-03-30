@@ -22,38 +22,26 @@ export default function BottomAdBanner() {
   }, []);
 
   if (!ADSENSE_CLIENT || !ADSENSE_SLOT) {
-    return (
-      <aside className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-ink/95 backdrop-blur">
-        <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-4 py-2">
-          <div className="min-w-0">
-            <p className="text-[10px] uppercase tracking-[0.3em] text-mist/50">Sponsored Slot</p>
-            <p className="truncate text-sm text-mist/80">
-              Add `VITE_GOOGLE_ADS_CLIENT` and `VITE_GOOGLE_ADS_SLOT` to enable Google ads here.
-            </p>
-          </div>
-          <a
-            className="shrink-0 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-ink transition hover:bg-amber-300"
-            href="https://adsense.google.com/"
-            rel="noreferrer"
-            target="_blank"
-          >
-            Set up AdSense
-          </a>
-        </div>
-      </aside>
-    );
+    return null;
   }
 
   return (
-    <aside className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-ink/95 backdrop-blur">
-      <div className="mx-auto flex max-w-[820px] flex-col gap-1 px-4 py-2">
-        <p className="text-[10px] uppercase tracking-[0.3em] text-mist/50">Sponsored</p>
-        <div className="mx-auto w-full max-w-[728px] overflow-hidden rounded-xl border border-white/10 bg-white px-2 py-1">
+    <aside className="rounded-[28px] border border-white/10 bg-white/5 p-5 backdrop-blur">
+      <div className="mx-auto flex max-w-[820px] flex-col gap-3">
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.3em] text-mist/50">Sponsored</p>
+          <p className="mt-2 max-w-2xl text-sm text-mist/70">
+            Ads are shown only on public content pages so they stay separate from account, navigation, and workspace screens.
+          </p>
+        </div>
+        <div className="mx-auto w-full max-w-[728px] overflow-hidden rounded-xl border border-white/10 bg-white px-2 py-3">
           <ins
             className="adsbygoogle block"
             data-ad-client={ADSENSE_CLIENT}
             data-ad-slot={ADSENSE_SLOT}
-            style={{ display: "inline-block", width: "728px", height: "90px", maxWidth: "100%" }}
+            data-ad-format="auto"
+            data-full-width-responsive="true"
+            style={{ display: "block", minHeight: "90px" }}
           />
         </div>
       </div>

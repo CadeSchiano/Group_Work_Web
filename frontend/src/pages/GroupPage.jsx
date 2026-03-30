@@ -37,6 +37,7 @@ export default function GroupPage() {
   const [taskForm, setTaskForm] = useState(emptyTask);
   const [milestoneForm, setMilestoneForm] = useState(emptyMilestone);
   const [file, setFile] = useState(null);
+  const [downloadingFileId, setDownloadingFileId] = useState("");
 
   const progressValue = useMemo(() => {
     if (!group?.tasks?.length) {
@@ -159,6 +160,30 @@ export default function GroupPage() {
       await loadGroup();
     } catch (submitError) {
       setError(submitError.message);
+    }
+  };
+
+  const handleDownloadFile = async (fileId, originalName) => {
+    setDownloadingFileId(fileId);
+    setError("");
+
+    try {
+      const blob = await apiRequest(`/groups/${groupId}/files/${fileId}/download`, {
+        token,
+        responseType: "blob",
+      });
+      const objectUrl = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = originalName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(objectUrl);
+    } catch (downloadError) {
+      setError(downloadError.message);
+    } finally {
+      setDownloadingFileId("");
     }
   };
 
@@ -337,10 +362,14 @@ export default function GroupPage() {
                 />
                 <form className="mt-6 space-y-4" onSubmit={handleUpload}>
                   <input
+                    accept=".pdf,.txt,.md,.csv,.png,.jpg,.jpeg,.webp,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip"
                     className="block w-full rounded-2xl border border-dashed border-white/20 bg-white/5 px-4 py-6 text-sm text-mist file:mr-4 file:rounded-full file:border-0 file:bg-accent file:px-4 file:py-2 file:font-semibold file:text-ink"
                     onChange={(event) => setFile(event.target.files?.[0] || null)}
                     type="file"
                   />
+                  <p className="text-xs text-mist/65">
+                    Allowed: documents, spreadsheets, presentations, images, text files, and zip archives up to 10 MB.
+                  </p>
                   <Button className="w-full" type="submit">
                     Upload file
                   </Button>
@@ -351,27 +380,37 @@ export default function GroupPage() {
                       className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-mist transition hover:border-mint/40"
                       key={item.id}
                     >
-                      <a
-                        className="min-w-0 flex-1"
-                        href={`${import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:4000"}${item.filePath}`}
-                        rel="noreferrer"
-                        target="_blank"
+                      <button
+                        className="min-w-0 flex-1 text-left"
+                        onClick={() => handleDownloadFile(item.id, item.originalName)}
+                        type="button"
                       >
                         <p className="truncate">{item.originalName}</p>
                         <p className="mt-1 text-xs text-mist/70">
                           {item.uploader.name} • {new Date(item.createdAt).toLocaleDateString()}
                         </p>
-                      </a>
-                      {isOwner || item.uploader.id === user?.id ? (
+                      </button>
+                      <div className="flex items-center gap-2">
                         <Button
                           className="px-3 py-2 text-xs"
-                          onClick={() => handleRemoveFile(item.id)}
+                          disabled={downloadingFileId === item.id}
+                          onClick={() => handleDownloadFile(item.id, item.originalName)}
                           type="button"
-                          variant="ghost"
+                          variant="secondary"
                         >
-                          Remove
+                          {downloadingFileId === item.id ? "Downloading..." : "Download"}
                         </Button>
-                      ) : null}
+                        {isOwner || item.uploader.id === user?.id ? (
+                          <Button
+                            className="px-3 py-2 text-xs"
+                            onClick={() => handleRemoveFile(item.id)}
+                            type="button"
+                            variant="ghost"
+                          >
+                            Remove
+                          </Button>
+                        ) : null}
+                      </div>
                     </div>
                   ))}
                 </div>

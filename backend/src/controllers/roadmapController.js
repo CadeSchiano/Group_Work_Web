@@ -1,5 +1,10 @@
 import { prisma } from "../config/prisma.js";
 
+const parseTargetDate = (value) => {
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
 export const listRoadmapItems = async (req, res) => {
   const { groupId } = req.params;
 
@@ -25,11 +30,17 @@ export const listRoadmapItems = async (req, res) => {
 };
 
 export const createRoadmapItem = async (req, res) => {
-  const { title, description, targetDate } = req.body;
+  const title = req.body.title?.trim();
+  const description = req.body.description?.trim();
+  const parsedTargetDate = parseTargetDate(req.body.targetDate);
   const { groupId } = req.params;
 
-  if (!title || !description || !targetDate) {
+  if (!title || !description || !req.body.targetDate) {
     return res.status(400).json({ message: "Title, description, and target date are required." });
+  }
+
+  if (!parsedTargetDate) {
+    return res.status(400).json({ message: "Target date is invalid." });
   }
 
   const membership = await prisma.groupMember.findUnique({
@@ -49,7 +60,7 @@ export const createRoadmapItem = async (req, res) => {
     data: {
       title,
       description,
-      targetDate: new Date(targetDate),
+      targetDate: parsedTargetDate,
       groupId,
     },
   });

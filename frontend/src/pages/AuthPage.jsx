@@ -6,7 +6,7 @@ import Card from "../components/Card";
 import Input from "../components/Input";
 import { useAuth } from "../hooks/useAuth";
 
-const initialForm = { name: "", email: "", password: "" };
+const initialForm = { name: "", email: "", password: "", resetToken: "" };
 
 export default function AuthPage() {
   const [mode, setMode] = useState("login");
@@ -17,7 +17,8 @@ export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const { persistSession } = useAuth();
 
-  const isRecoveryMode = mode === "recover";
+  const isResetRequestMode = mode === "recover";
+  const isResetMode = mode === "reset";
 
   const resetFormState = (nextMode) => {
     setMode(nextMode);
@@ -39,17 +40,31 @@ export default function AuthPage() {
           ? "/auth/login"
           : mode === "signup"
             ? "/auth/signup"
-            : "/auth/recover-password";
+            : mode === "recover"
+              ? "/auth/request-password-reset"
+              : "/auth/reset-password";
       const payload =
         mode === "signup"
-          ? form
-          : {
-              email: form.email,
-              password: form.password,
-            };
+          ? { name: form.name, email: form.email, password: form.password }
+          : mode === "login"
+            ? { email: form.email, password: form.password }
+            : mode === "recover"
+              ? { email: form.email }
+              : { email: form.email, password: form.password, resetToken: form.resetToken };
       const data = await apiRequest(path, { method: "POST", body: payload });
 
-      if (isRecoveryMode) {
+      if (isResetRequestMode) {
+        const nextMessage = data.resetToken
+          ? `${data.message} Development reset token: ${data.resetToken}`
+          : data.message;
+        setMessage(nextMessage);
+        setForm((current) => ({ ...initialForm, email: current.email, resetToken: data.resetToken || "" }));
+        setMode("reset");
+        setShowPassword(false);
+        return;
+      }
+
+      if (isResetMode) {
         setMessage(data.message);
         setForm(initialForm);
         setShowPassword(false);
@@ -57,7 +72,7 @@ export default function AuthPage() {
         return;
       }
 
-      persistSession(data.token, data.user);
+      persistSession(data.user);
     } catch (submitError) {
       setError(submitError.message);
     } finally {
@@ -124,31 +139,49 @@ export default function AuthPage() {
               value={form.email}
               onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
             />
-            <Input
-              label={isRecoveryMode ? "New password" : "Password"}
-              type={showPassword ? "text" : "password"}
-              placeholder={isRecoveryMode ? "Choose a new password" : "••••••••"}
-              value={form.password}
-              onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
-              rightElement={
-                <button
-                  className="text-sm font-semibold text-mint transition hover:text-white"
-                  onClick={() => setShowPassword((current) => !current)}
-                  type="button"
-                >
-                  {showPassword ? "Hide" : "Show"}
-                </button>
-              }
-            />
+            {isResetMode ? (
+              <Input
+                label="Reset token"
+                placeholder="Paste the reset token"
+                value={form.resetToken}
+                onChange={(event) => setForm((current) => ({ ...current, resetToken: event.target.value }))}
+              />
+            ) : null}
+            {!isResetRequestMode ? (
+              <Input
+                label={isResetMode ? "New password" : "Password"}
+                type={showPassword ? "text" : "password"}
+                placeholder={isResetMode ? "Choose a new password" : "••••••••"}
+                value={form.password}
+                onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
+                rightElement={
+                  <button
+                    className="text-sm font-semibold text-mint transition hover:text-white"
+                    onClick={() => setShowPassword((current) => !current)}
+                    type="button"
+                  >
+                    {showPassword ? "Hide" : "Show"}
+                  </button>
+                }
+              />
+            ) : null}
 
             {message ? <p className="rounded-2xl bg-mint/10 px-4 py-3 text-sm text-mint">{message}</p> : null}
             {error ? <p className="rounded-2xl bg-coral/10 px-4 py-3 text-sm text-coral">{error}</p> : null}
 
             <Button className="w-full" disabled={loading} type="submit">
-              {loading ? "Working..." : mode === "login" ? "Log in" : mode === "signup" ? "Create account" : "Reset password"}
+              {loading
+                ? "Working..."
+                : mode === "login"
+                  ? "Log in"
+                  : mode === "signup"
+                    ? "Create account"
+                    : mode === "recover"
+                      ? "Generate reset token"
+                      : "Reset password"}
             </Button>
 
-            {isRecoveryMode ? (
+            {isResetRequestMode || isResetMode ? (
               <button
                 className="w-full text-sm text-mist/80 transition hover:text-white"
                 onClick={() => resetFormState("login")}

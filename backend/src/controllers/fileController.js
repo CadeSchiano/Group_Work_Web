@@ -2,18 +2,25 @@ import fs from "fs/promises";
 import path from "path";
 import { prisma } from "../config/prisma.js";
 
-export const listFiles = async (req, res) => {
-  const { groupId } = req.params;
-
-  const membership = await prisma.groupMember.findUnique({
+const getMembership = (groupId, userId) =>
+  prisma.groupMember.findUnique({
     where: {
       groupId_userId: {
         groupId,
-        userId: req.user.id,
+        userId,
       },
     },
   });
 
+const getGroupFile = async (groupId, fileId) => {
+  const file = await prisma.groupFile.findUnique({ where: { id: fileId } });
+  return file && file.groupId === groupId ? file : null;
+};
+
+export const listFiles = async (req, res) => {
+  const { groupId } = req.params;
+
+  const membership = await getMembership(groupId, req.user.id);
   if (!membership) {
     return res.status(403).json({ message: "You do not have access to this group." });
   }
@@ -26,21 +33,18 @@ export const listFiles = async (req, res) => {
     orderBy: { createdAt: "desc" },
   });
 
-  return res.json({ files });
+  return res.json({
+    files: files.map((file) => ({
+      ...file,
+      extension: path.extname(file.originalName),
+    })),
+  });
 };
 
 export const uploadFile = async (req, res) => {
   const { groupId } = req.params;
 
-  const membership = await prisma.groupMember.findUnique({
-    where: {
-      groupId_userId: {
-        groupId,
-        userId: req.user.id,
-      },
-    },
-  });
-
+  const membership = await getMembership(groupId, req.user.id);
   if (!membership) {
     return res.status(403).json({ message: "You do not have access to this group." });
   }
@@ -53,7 +57,6 @@ export const uploadFile = async (req, res) => {
     data: {
       originalName: req.file.originalname,
       fileName: req.file.filename,
-      filePath: `/uploads/${req.file.filename}`,
       mimeType: req.file.mimetype,
       size: req.file.size,
       groupId,
@@ -72,27 +75,35 @@ export const uploadFile = async (req, res) => {
   });
 };
 
-export const deleteFile = async (req, res) => {
+export const downloadFile = async (req, res) => {
   const { groupId, fileId } = req.params;
 
-  const membership = await prisma.groupMember.findUnique({
-    where: {
-      groupId_userId: {
-        groupId,
-        userId: req.user.id,
-      },
-    },
-  });
-
+  const membership = await getMembership(groupId, req.user.id);
   if (!membership) {
     return res.status(403).json({ message: "You do not have access to this group." });
   }
 
-  const file = await prisma.groupFile.findUnique({
-    where: { id: fileId },
-  });
+  const file = await getGroupFile(groupId, fileId);
+  if (!file) {
+    return res.status(404).json({ message: "File not found." });
+  }
 
-  if (!file || file.groupId !== groupId) {
+  const diskPath = path.resolve("uploads", file.fileName);
+  await fs.access(diskPath);
+  res.setHeader("Content-Type", file.mimeType);
+  return res.download(diskPath, file.originalName);
+};
+
+export const deleteFile = async (req, res) => {
+  const { groupId, fileId } = req.params;
+
+  const membership = await getMembership(groupId, req.user.id);
+  if (!membership) {
+    return res.status(403).json({ message: "You do not have access to this group." });
+  }
+
+  const file = await getGroupFile(groupId, fileId);
+  if (!file) {
     return res.status(404).json({ message: "File not found." });
   }
 

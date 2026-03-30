@@ -1,15 +1,15 @@
 import jwt from "jsonwebtoken";
 import { prisma } from "../config/prisma.js";
+import { getAuthToken } from "../utils/cookies.js";
 
 export const requireAuth = async (req, res, next) => {
-  const header = req.headers.authorization;
+  const token = getAuthToken(req);
 
-  if (!header?.startsWith("Bearer ")) {
+  if (!token) {
     return res.status(401).json({ message: "Authentication required." });
   }
 
   try {
-    const token = header.replace("Bearer ", "");
     const payload = jwt.verify(token, process.env.JWT_SECRET);
     const user = await prisma.user.findUnique({
       where: { id: payload.sub },

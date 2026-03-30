@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import Button from "../components/Button";
+import BottomAdBanner from "../components/BottomAdBanner";
 import Card from "../components/Card";
 
 export default function HomePage() {
@@ -58,6 +59,10 @@ export default function HomePage() {
               <li>File uploads and milestone planning inside each group</li>
             </ul>
           </Card>
+        </section>
+
+        <section className="mt-10">
+          <BottomAdBanner />
         </section>
 
         <footer className="mt-12 flex flex-col gap-3 border-t border-white/10 py-6 text-sm text-mist/65 sm:flex-row sm:items-center sm:justify-between">

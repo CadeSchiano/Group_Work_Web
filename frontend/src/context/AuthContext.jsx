@@ -3,43 +3,16 @@ import { apiRequest } from "../api/client";
 
 export const AuthContext = createContext(null);
 
-const TOKEN_KEY = "group-project-token";
-const USER_KEY = "group-project-user";
-const getStoredUser = () => {
-  const savedUser = localStorage.getItem(USER_KEY);
-
-  if (!savedUser) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(savedUser);
-  } catch {
-    localStorage.removeItem(USER_KEY);
-    return null;
-  }
-};
-
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(localStorage.getItem(TOKEN_KEY));
-  const [user, setUser] = useState(getStoredUser);
-  const [loading, setLoading] = useState(() => Boolean(token) && !getStoredUser());
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const bootstrap = async () => {
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-
       try {
-        const data = await apiRequest("/auth/me", { token });
+        const data = await apiRequest("/auth/me");
         setUser(data.user);
-        localStorage.setItem(USER_KEY, JSON.stringify(data.user));
       } catch {
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(USER_KEY);
-        setToken(null);
         setUser(null);
       } finally {
         setLoading(false);
@@ -47,32 +20,32 @@ export const AuthProvider = ({ children }) => {
     };
 
     bootstrap();
-  }, [token]);
+  }, []);
 
-  const persistSession = (nextToken, nextUser) => {
-    localStorage.setItem(TOKEN_KEY, nextToken);
-    localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
-    setToken(nextToken);
+  const persistSession = (nextUser) => {
     setUser(nextUser);
     setLoading(false);
   };
 
-  const logout = () => {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
-    setToken(null);
+  const logout = async () => {
+    try {
+      await apiRequest("/auth/logout", { method: "POST", body: {} });
+    } catch {
+      // Clear local state even if the server session is already gone.
+    }
+
     setUser(null);
   };
 
   const value = useMemo(
     () => ({
-      token,
+      token: null,
       user,
       loading,
       persistSession,
       logout,
     }),
-    [loading, token, user],
+    [loading, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

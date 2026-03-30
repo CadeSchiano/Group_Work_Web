@@ -6,21 +6,24 @@ import {
   listGroups,
   removeGroupMember,
 } from "../controllers/groupController.js";
-import { createTask, listTasks } from "../controllers/taskController.js";
-import { deleteFile, listFiles, uploadFile } from "../controllers/fileController.js";
+import { downloadFile, deleteFile, listFiles, uploadFile } from "../controllers/fileController.js";
 import { createRoadmapItem, listRoadmapItems } from "../controllers/roadmapController.js";
+import { createTask, listTasks } from "../controllers/taskController.js";
+import { rateLimit } from "../middleware/rateLimitMiddleware.js";
 import { upload } from "../middleware/uploadMiddleware.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 const router = Router();
+const inviteLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, key: "group-join" });
 
 router.get("/", asyncHandler(listGroups));
 router.post("/", asyncHandler(createGroup));
-router.post("/join", asyncHandler(joinGroup));
+router.post("/join", inviteLimiter, asyncHandler(joinGroup));
 router.get("/:groupId", asyncHandler(getGroupDetails));
 router.get("/:groupId/tasks", asyncHandler(listTasks));
 router.post("/:groupId/tasks", asyncHandler(createTask));
 router.get("/:groupId/files", asyncHandler(listFiles));
+router.get("/:groupId/files/:fileId/download", asyncHandler(downloadFile));
 router.post("/:groupId/files", upload.single("file"), asyncHandler(uploadFile));
 router.delete("/:groupId/files/:fileId", asyncHandler(deleteFile));
 router.post("/:groupId/files/:fileId/delete", asyncHandler(deleteFile));
